@@ -34,24 +34,31 @@ func NewClient(url string, httpClient *http.Client) *Client {
 // with a query derived from q, populating the response into it.
 // q should be a pointer to struct that corresponds to the GraphQL schema.
 func (c *Client) Query(ctx context.Context, q interface{}, variables map[string]interface{}) error {
-	return c.do(ctx, queryOperation, q, variables)
+	return c.do(ctx, queryOperation, q, variables, variables)
+}
+
+// QueryVariables takes an additional 'variablesSchema' parameter that
+// allows for a decoupling of the variables passed from the query argument
+func (c *Client) QueryVariables(ctx context.Context, q interface{}, variablesSchema map[string]interface{}, variables map[string]interface{}) error {
+	return c.do(ctx, queryOperation, q, variablesSchema, variables)
 }
 
 // Mutate executes a single GraphQL mutation request,
 // with a mutation derived from m, populating the response into it.
 // m should be a pointer to struct that corresponds to the GraphQL schema.
 func (c *Client) Mutate(ctx context.Context, m interface{}, variables map[string]interface{}) error {
-	return c.do(ctx, mutationOperation, m, variables)
+	return c.do(ctx, mutationOperation, m, variables, variables)
 }
 
 // do executes a single GraphQL operation.
-func (c *Client) do(ctx context.Context, op operationType, v interface{}, variables map[string]interface{}) error {
+func (c *Client) do(ctx context.Context, op operationType, v interface{}, variablesSchema map[string]interface{},
+	variables map[string]interface{}) error {
 	var query string
 	switch op {
 	case queryOperation:
-		query = constructQuery(v, variables)
+		query = constructQuery(v, variablesSchema)
 	case mutationOperation:
-		query = constructMutation(v, variables)
+		query = constructMutation(v, variablesSchema)
 	}
 	in := struct {
 		Query     string                 `json:"query"`
